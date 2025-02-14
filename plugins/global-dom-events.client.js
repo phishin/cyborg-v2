@@ -1,0 +1,1 @@
+// plugins/dom-events.client.jsimport { gsap } from "gsap";import { ScrollTrigger } from "gsap/ScrollTrigger";import { ScrollToPlugin } from "gsap/ScrollToPlugin";gsap.registerPlugin(ScrollTrigger, ScrollToPlugin);export default defineNuxtPlugin(() => {    if (process.client) {        document.addEventListener("DOMContentLoaded", () => {        });    }});
