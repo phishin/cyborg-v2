@@ -11,7 +11,9 @@
   },
   "dependencies": {
     "firebase": "^11.3.0",
+    "fuse.js": "^7.1.0",
     "gsap": "^3.12.7",
+    "lodash": "^4.17.21",
     "nuxt": "^3.15.4",
     "swiper": "^11.2.2",
     "tailwind": "^4.0.0",
