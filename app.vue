@@ -18,7 +18,6 @@ const globalCreationState = reactive({
 });
 
 
-
 // Access the injected GSAP animations initializer
 const { $initAnimations } = useNuxtApp();
 
