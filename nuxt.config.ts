@@ -31,16 +31,19 @@ export default defineNuxtConfig({
   },
   compatibilityDate: '2024-11-01',
   plugins: [
-    { src: '~/plugins/gsap.client.js', mode: 'client' },
     { src: '~/plugins/firebase.client.js', mode: 'client' },
+    { src: '~/plugins/gsap.client.js', mode: 'client' },
     { src: '~/plugins/global-dom-events.client.js', mode: 'client' },
     { src: '~/plugins/lazyload.client.js', mode: 'client' },
   ],
   devtools: {
     enabled: true
   },
-  modules: ['@nuxtjs/tailwindcss'],
-  css: ['~/assets/css/tailwind.css'],
+  modules: [
+      '@nuxtjs/tailwindcss',
+  ],
+
+  css: ['~/assets/css/tailwind-output.css'],
   tailwindcss: {
     configPath: 'tailwind.config.js'
   }

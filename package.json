@@ -15,6 +15,7 @@
     "gsap": "^3.12.7",
     "lodash": "^4.17.21",
     "nuxt": "^3.15.4",
+    "pinia": "^3.0.1",
     "swiper": "^11.2.2",
     "tailwind": "^4.0.0",
     "vanilla-lazyload": "^19.1.3",
