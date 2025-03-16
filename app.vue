@@ -7,9 +7,7 @@
 </template>
 
 <script setup>
-import { computed, onMounted, ref, provide, inject } from "vue";
-
-import ImageElement from "~/components/ImageElement.vue";
+import { onMounted } from "vue";
 
 // Access the injected GSAP animations initializer
 const { $initAnimations } = useNuxtApp();
