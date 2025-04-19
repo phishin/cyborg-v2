@@ -7,7 +7,7 @@
     "dev": "nuxt dev",
     "generate": "nuxt generate",
     "preview": "nuxt preview",
-    "postinstall": "nuxt prepare"
+    "deploy": "npx nuxt build --preset github_pages && gh-pages --repo=https://github.com/phishin/cyborg-v2.git --dist=.output/public --branch=gh-pages"
   },
   "dependencies": {
     "firebase": "^11.3.0",
@@ -24,6 +24,7 @@
   },
   "devDependencies": {
     "@nuxtjs/tailwindcss": "^6.13.1",
+    "gh-pages": "^6.3.0",
     "sass-embedded": "^1.83.4"
   }
 }
