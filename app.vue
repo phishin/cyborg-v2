@@ -4,6 +4,7 @@
     <NuxtLayout />
   </div>
 
+  
 </template>
 
 <script setup>
