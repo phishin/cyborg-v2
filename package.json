@@ -7,7 +7,7 @@
     "dev": "nuxt dev",
     "generate": "nuxt generate",
     "preview": "nuxt preview",
-    "deploy": "npx nuxt build --preset github_pages && gh-pages --dotfiles --repo=https://github.com/phishin/phishin.github.io.git --dist=.output/public --branch=master"
+    "deploy": "npm run generate && npx gh-pages --dotfiles --nojekyll --repo=https://github.com/phishin/phishin.github.io.git --dist=.output/public --branch master"
   },
   "dependencies": {
     "firebase": "^11.3.0",
