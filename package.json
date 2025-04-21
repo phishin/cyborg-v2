@@ -10,12 +10,15 @@
     "deploy": "npm run generate && npx gh-pages --dotfiles --nojekyll --repo=https://github.com/phishin/phishin.github.io.git --dist=.output/public --branch master"
   },
   "dependencies": {
+    "@pinia/nuxt": "^0.11.0",
+    "@stripe/stripe-js": "^7.1.0",
     "firebase": "^11.3.0",
     "fuse.js": "^7.1.0",
     "gsap": "^3.12.7",
     "lodash": "^4.17.21",
     "nuxt": "^3.15.4",
-    "pinia": "^3.0.1",
+    "pinia": "^3.0.2",
+    "stripe": "^18.0.0",
     "swiper": "^11.2.2",
     "tailwind": "^4.0.0",
     "vanilla-lazyload": "^19.1.3",

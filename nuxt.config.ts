@@ -16,7 +16,7 @@ export default defineNuxtConfig({
     }
   },
 
-  // all your head/meta tags
+  // head meta stuff
   app: {
     baseURL: '/',
     head: {
@@ -43,7 +43,7 @@ export default defineNuxtConfig({
     }
   },
 
-  // your client‑only plugins
+  // plugins to use
   plugins: [
     { src: '~/plugins/firebase.client.js', mode: 'client' },
     { src: '~/plugins/gsap.client.js',     mode: 'client' },
@@ -51,8 +51,22 @@ export default defineNuxtConfig({
     { src: '~/plugins/lazyload.client.js',  mode: 'client' }
   ],
 
-  // Tailwind + your CSS
-  modules: ['@nuxtjs/tailwindcss'],
+  // stripe stuff
+  runtimeConfig: {
+    // server only
+    stripeSecretKey: process.env.STRIPE_SECRET_KEY,
+    stripePriceId:    process.env.STRIPE_PRICE_ID,
+
+    public: {
+      stripePublishableKey: process.env.STRIPE_PUBLISHABLE_KEY,
+    }
+
+  },
+
+  // modules
+  modules: [
+      '@nuxtjs/tailwindcss',
+  ],
   css: ['~/assets/css/tailwind-output.css'],
 
 
