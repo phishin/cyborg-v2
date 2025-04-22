@@ -3,6 +3,7 @@ import { defineNuxtConfig } from 'nuxt/config'
 
 export default defineNuxtConfig({
   compatibilityDate: '2025-04-20',
+  devMode: true,
   ssr: false,
   nitro: {
     preset: 'static',
@@ -55,9 +56,9 @@ export default defineNuxtConfig({
   runtimeConfig: {
     // server only
     stripeSecretKey: process.env.STRIPE_SECRET_KEY,
-    stripePriceId:    process.env.STRIPE_PRICE_ID,
 
     public: {
+      stripePriceId:    process.env.STRIPE_PRICE_ID,
       stripePublishableKey: process.env.STRIPE_PUBLISHABLE_KEY,
     }
 
