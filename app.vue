@@ -23,16 +23,11 @@ onMounted(() => {
 <style lang="scss">
 /* Base toast container */
 .Vue-Toastification__toast--success {
-  background-color: #1a202c;     /* dark slate */
-  color: #edf2f7;                /* off-white text */
-  border-radius: 0.5rem;         /* 8px rounded corners */
+  background-color: #0F172A;
+  color: #ffffff;
+  border-radius: 8px;
   box-shadow: 0 4px 12px rgba(0,0,0,0.15);
   padding: 1rem;
-}
-
-/* Success variant */
-.Toastify__toast--success {
-  border-left: 4px solid #48bb78; /* green accent */
 }
 
 /* Error variant */
