@@ -19,7 +19,9 @@ onMounted(() => {
 
 <style lang="scss">
 /* Base toast container */
-.Vue-Toastification__toast--success {
+
+
+.Vue-Toastification__toast--success, .Vue-Toastification__toast.Vue-Toastification__toast--info {
   color: #ffffff;
   background-color: #0F172A;
   border-radius: 8px;
