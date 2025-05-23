@@ -1,10 +1,7 @@
 <template>
-
-  <div>
+  <div class="app-wrapper">
     <NuxtLayout />
   </div>
-
-
 </template>
 
 <script setup>
@@ -23,8 +20,8 @@ onMounted(() => {
 <style lang="scss">
 /* Base toast container */
 .Vue-Toastification__toast--success {
-  background-color: #0F172A;
   color: #ffffff;
+  background-color: #0F172A;
   border-radius: 8px;
   box-shadow: 0 4px 12px rgba(0,0,0,0.15);
   padding: 1rem;
@@ -37,16 +34,17 @@ onMounted(() => {
 
 /* Progress bar */
 .Toastify__progress-bar {
-  background: #edf2f7;  /* pale bar */
+  background: #F3F4F6;  /* pale bar */
 }
 
 /* Close button (if enabled) */
 .Toastify__close-button {
-  color: #a0aec0;
-  opacity: 0.8;
+  color: #00C9B1;
+  opacity: 1;
 }
 .Toastify__close-button:hover {
   opacity: 1;
+  color: #D5F7F3;
 }
 
 </style>
