@@ -18,9 +18,8 @@ onMounted(() => {
 </script>
 
 <style lang="scss">
+
 /* Base toast container */
-
-
 .Vue-Toastification__toast--success, .Vue-Toastification__toast.Vue-Toastification__toast--info {
   color: #ffffff;
   background-color: #0F172A;
@@ -48,5 +47,6 @@ onMounted(() => {
   opacity: 1;
   color: #D5F7F3;
 }
+
 
 </style>
