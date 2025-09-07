@@ -9,10 +9,10 @@ export default defineNuxtConfig({
     preset: 'static',
     prerender: {
       routes: [
-        '/',               // you probably already have this
-        '/create-my-logo'  // ← add this line
+        '/',
+        '/create-my-logo'
       ],
-      crawlLinks: true,    // still follow any <a> you have
+      crawlLinks: true,
       failOnError: false
     }
   },
@@ -40,7 +40,7 @@ export default defineNuxtConfig({
       ]
     },
     router: {
-      base: '/'   // Pages is your root—no repo‑slug here
+      base: '/'
     }
   },
 
