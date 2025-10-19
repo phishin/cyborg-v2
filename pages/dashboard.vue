@@ -1,5 +1,285 @@
+<script setup>
+import { computed, reactive, ref, watch, onMounted, onUnmounted } from 'vue'
+import { useRouter, useNuxtApp, useHead } from '#imports'
+import { useLogoStore } from '~/stores/logoStores'
+import { useUserProfileStore } from '~/stores/userProfile'
+
+import { getFirestore, doc, deleteDoc } from 'firebase/firestore'
+
+
+useHead({
+  title: 'Account Dashboard | Cyborg Logo'
+})
+
+const router = useRouter()
+const nuxtApp = useNuxtApp()
+const logoStore = useLogoStore()
+const profileStore = useUserProfileStore()
+
+const form = reactive({
+  firstName: '',
+  lastName: '',
+  phone: '',
+  email: '',
+})
+
+const feedback = reactive({
+  success: '',
+})
+
+const auth = nuxtApp.$firebase?.auth || null
+const listenAuthState = nuxtApp.$firebase?.onAuthStateChanged
+
+const currentUser = ref(auth?.currentUser || null)
+const isAuthChecking = ref(!currentUser.value)
+const logosLoading = ref(false)
+const unsubscribeAuth = ref(null)
+
+const normalizeDateValue = (value) => {
+  if (!value) return null
+  if (typeof value.toDate === 'function') {
+    try {
+      return value.toDate()
+    } catch (error) {
+      return null
+    }
+  }
+  if (value instanceof Date) return value
+  const parsed = new Date(value)
+  return Number.isNaN(parsed.getTime()) ? null : parsed
+}
+
+const formatDisplayDate = (value) => {
+  if (!value) return 'just now'
+  try {
+    return new Intl.DateTimeFormat('en-US', {
+      dateStyle: 'medium',
+      timeStyle: 'short',
+    }).format(value)
+  } catch (error) {
+    return value.toString()
+  }
+}
+
+const getLogoTitle = (logo) => (
+    logo?.state?.fullBusinessName ||
+    logo?.state?.companyName ||
+    logo?.state?.businessNameInitials ||
+    'Saved Logo'
+)
+
+const exportLogoState = (logo) => {
+  if (!logo?.state) return
+  const blob = new Blob([JSON.stringify(logo.state, null, 2)], { type: 'application/json' })
+  const url = URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = url
+  const title = getLogoTitle(logo)
+      .replace(/[^a-z0-9-_]+/gi, '-')
+      .replace(/-{2,}/g, '-')
+      .replace(/^-|-$/g, '')
+  link.download = `${title || 'logo-settings'}.json`
+  document.body.appendChild(link)
+  link.click()
+  document.body.removeChild(link)
+  URL.revokeObjectURL(url)
+}
+
+const profileError = computed(() => profileStore.error)
+const isLoadingProfile = computed(() => profileStore.isLoading)
+const isSaving = computed(() => profileStore.isSaving)
+const lastSavedCopy = computed(() => {
+  if (!profileStore.lastSavedAt) return ''
+  return formatDisplayDate(profileStore.lastSavedAt)
+})
+
+const hasChanges = computed(() => {
+  const source = profileStore.profile || {}
+  return ['firstName', 'lastName', 'phone', 'email'].some((field) => (form[field] || '') !== (source[field] || ''))
+})
+
+const savedLogos = computed(() => logoStore.savedLogos || [])
+
+const formattedLogos = computed(() =>
+    savedLogos.value.map((logo) => ({
+      ...logo,
+      createdAtDate: normalizeDateValue(logo.createdAt),
+    }))
+)
+
+
+// helpers
+const onlyDigits = (v) => (v || '').replace(/\D/g, '')
+
+const formatUSPhone = (v) => {
+  const d = onlyDigits(v).slice(0, 10) // hard cap at 10 digits
+  const len = d.length
+  if (!len) return ''
+  if (len < 4) return `(${d}`
+  if (len < 7) return `(${d.slice(0,3)}) ${d.slice(3)}`
+  return `(${d.slice(0,3)}) ${d.slice(3,6)}-${d.slice(6)}`
+}
+
+// keep formatting as user types / pastes
+const onPhoneInput = (e) => {
+  form.phone = formatUSPhone(e.target.value)
+}
+
+const onPhoneBlur = () => {
+  form.phone = formatUSPhone(form.phone)
+}
+
+// Check if phone number is either empty or valid (10 digits)
+const isValidPhone = computed(() => {
+  const digits = (form.phone || '').replace(/\D/g, '')
+  return digits.length === 0 || digits.length === 10
+})
+
+
+
+const deletingIds = ref(new Set())
+
+const handleDeleteLogo = async (logo) => {
+  if (!logo?.id) return
+  const ok = window.confirm('Delete this saved logo? This cannot be undone.')
+  if (!ok) return
+
+  deletingIds.value.add(logo.id)
+
+  try {
+    // Delete from Firestore
+    const db = getFirestore(nuxtApp.$firebaseApp)
+    await deleteDoc(doc(db, 'logos', logo.id))
+
+    // Remove from local UI (logoStore.savedLogos is the source here)
+    const next = (logoStore.savedLogos || []).filter(l => l.id !== logo.id)
+    logoStore.$patch({ savedLogos: next })
+  } catch (err) {
+    console.error('Failed to delete logo:', err)
+    alert('Sorry, we could not delete that logo. Please try again.')
+  } finally {
+    deletingIds.value.delete(logo.id)
+  }
+}
+
+const confirmingId = ref(null) // which logo is asking for confirmation
+
+const askDelete = (logo) => {
+  if (!logo?.id) return
+  confirmingId.value = logo.id
+}
+
+const cancelDelete = () => {
+  confirmingId.value = null
+}
+
+const confirmDelete = async (logo) => {
+  if (!logo?.id) return
+  // show loading state for this id
+  deletingIds.value.add(logo.id)
+  try {
+    // Do the actual deletion (same logic you already have)
+    const db = getFirestore(nuxtApp.$firebaseApp) // or nuxtApp.$firebase.app if that's your setup
+    await deleteDoc(doc(db, 'logos', logo.id))
+
+    const next = (logoStore.savedLogos || []).filter(l => l.id !== logo.id)
+    logoStore.$patch({ savedLogos: next })
+  } catch (err) {
+    console.error('Failed to delete logo:', err)
+    alert('Sorry, we could not delete that logo. Please try again.')
+  } finally {
+    deletingIds.value.delete(logo.id)
+    confirmingId.value = null
+  }
+}
+
+
+watch(
+    () => profileStore.profile,
+    (profile) => {
+      form.firstName = profile?.firstName || ''
+      form.lastName = profile?.lastName || ''
+      form.phone = profile?.phone || ''
+      form.email = profile?.email || ''
+    },
+    { immediate: true }
+)
+
+const resumeLogo = (logo) => {
+  if (!logo) return
+  logoStore.restoreLogo(logo)
+  router.push('/create-my-logo')
+}
+
+const loadDashboardData = async (user) => {
+  if (!user) {
+    currentUser.value = null
+    isAuthChecking.value = false
+    feedback.success = ''
+    profileStore.resetProfile()
+    logoStore.$patch({ savedLogos: [] })
+    return
+  }
+
+  currentUser.value = user
+  isAuthChecking.value = false
+  feedback.success = ''
+
+  try {
+    await profileStore.loadProfile(user.uid)
+  } catch (error) {
+    // Errors are captured in the store
+  }
+
+  logosLoading.value = true
+  try {
+    await logoStore.fetchSavedLogos()
+  } catch (error) {
+    console.error('Unable to load saved logos', error)
+  } finally {
+    logosLoading.value = false
+  }
+}
+
+onMounted(async () => {
+  if (auth?.currentUser) {
+    await loadDashboardData(auth.currentUser)
+  } else {
+    isAuthChecking.value = true
+  }
+
+  if (listenAuthState && auth) {
+    unsubscribeAuth.value = listenAuthState(auth, (user) => {
+      loadDashboardData(user)
+    })
+  } else {
+    isAuthChecking.value = false
+  }
+})
+
+onUnmounted(() => {
+  if (typeof unsubscribeAuth.value === 'function') {
+    unsubscribeAuth.value()
+  }
+})
+
+const handleSave = async () => {
+  feedback.success = ''
+
+  try {
+    await profileStore.saveProfile({ ...form })
+    if (!profileError.value) {
+      feedback.success = 'Profile updated successfully.'
+    }
+  } catch (error) {
+    // Error message is surfaced via profileError
+  }
+}
+</script>
+
+
 <template>
-    <section class="dashboard-page w-full min-h-screen bg-neutral-50 font-primary py-[80px]">
+    <section class="dashboard-page w-full min-h-screen bg-neutral-50 font-primary py-[80px] lg:pt-[120px]">
 
         <div class="max-w-[1200px] mx-auto px-6 lg:px-8">
             <header class="mb-10">
@@ -64,15 +344,20 @@
                                 <label for="phone" class="text-[15px] font-semibold text-neutral-700 mb-2 uppercase tracking-[1px]">
                                     Phone
                                 </label>
-                                <input
-                                    id="phone"
-                                    v-model="form.phone"
-                                    type="tel"
-                                    autocomplete="tel"
-                                    class="rounded-[10px] border border-neutral-300 focus:border-brand-300 focus:ring-0 text-[16px] text-neutral-900 px-4 py-3 disabled:bg-neutral-100 disabled:text-neutral-400"
-                                    placeholder="(555) 123-4567"
-                                    :disabled="isLoadingProfile || isAuthChecking || isSaving"
-                                />
+                              <input
+                                  id="phone"
+                                  v-model="form.phone"
+                                  type="tel"
+                                  inputmode="numeric"
+                                  :maxlength="14"
+                                  autocomplete="tel"
+                                  class="rounded-[10px] border border-neutral-300 focus:border-brand-300 focus:ring-0 text-[16px] text-neutral-900 px-4 py-3 disabled:bg-neutral-100 disabled:text-neutral-400"
+                                  placeholder="(555) 123-4567"
+                                  :disabled="isSaving || isLoadingProfile || isAuthChecking || !hasChanges || !isValidPhone"
+                                  @input="onPhoneInput"
+                                  @blur="onPhoneBlur"
+                              />
+
                             </div>
                             <div class="flex flex-col">
                                 <label for="email" class="text-[15px] font-semibold text-neutral-700 mb-2 uppercase tracking-[1px]">
@@ -121,7 +406,7 @@
                     </form>
                 </section>
 
-                <section class="bg-white border border-neutral-200 rounded-[5px] shadow-sm overflow-hidden">
+                <section class="bg-white border border-neutral-200 rounded-[5px] shadow-sm overflow-hidden" id="saved-logos">
                     <div class="px-6 md:px-10 py-6 border-b border-neutral-200 bg-neutral-100">
                         <h2 class="text-[26px] md:text-[30px] font-black text-black uppercase">Saved Logos</h2>
                         <p class="text-neutral-600 text-[16px] md:text-[18px] leading-[1.5]">
@@ -174,13 +459,45 @@
                                         >
                                             Resume Editing
                                         </button>
-<!--                                        <button-->
-<!--                                            type="button"-->
-<!--                                            class="text-brand-300 font-bold text-[14px] underline"-->
-<!--                                            @click="exportLogoState(logo)"-->
-<!--                                        >-->
-<!--                                            Download Settings-->
-<!--                                        </button>-->
+
+                                      <!-- Primary delete trigger -->
+                                      <button
+                                          v-if="confirmingId !== logo.id"
+                                          type="button"
+                                          class="text-red-600 font-bold text-[14px] underline disabled:opacity-50 disabled:cursor-not-allowed"
+                                          :disabled="deletingIds.has(logo.id)"
+                                          @click="askDelete(logo)"
+                                      >
+                                        Delete
+                                      </button>
+
+                                      <!-- Inline confirm helper -->
+                                      <div
+                                          v-else
+                                          class=" block relative text-[14px] text-neutral-700 bg-white border border-neutral-200 rounded-[5px] p-3 transition-all duration-500"
+                                      style="transition: 0.5s all ease-in-out;">
+                                        <p class="mb-2">
+                                          Are you sure you want to delete?
+                                        </p>
+                                        <div class="flex gap-3">
+                                          <button
+                                              type="button"
+                                              class="cta-btn bg-red-600 text-white uppercase font-black tracking-[1px] text-[12px] leading-[1] py-2 px-3 rounded-[8px] disabled:opacity-50 disabled:cursor-not-allowed"
+                                              :disabled="deletingIds.has(logo.id)"
+                                              @click="confirmDelete(logo)"
+                                          >
+                                            <span class="text-[12px] font-medium" v-if="deletingIds.has(logo.id)">Deleting…</span>
+                                            <span v-else>Yes</span>
+                                          </button>
+                                          <button
+                                              type="button"
+                                              class="text-neutral-600 font-bold text-[12px] underline"
+                                              @click="cancelDelete"
+                                          >
+                                            No
+                                          </button>
+                                        </div>
+                                      </div>
                                     </div>
                                 </div>
                             </article>
@@ -192,194 +509,6 @@
     </section>
 </template>
 
-<script setup>
-import { computed, reactive, ref, watch, onMounted, onUnmounted } from 'vue'
-import { useRouter, useNuxtApp, useHead } from '#imports'
-import { useLogoStore } from '~/stores/logoStores'
-import { useUserProfileStore } from '~/stores/userProfile'
-
-useHead({
-    title: 'Account Dashboard | Cyborg Logo'
-})
-
-const router = useRouter()
-const nuxtApp = useNuxtApp()
-const logoStore = useLogoStore()
-const profileStore = useUserProfileStore()
-
-const form = reactive({
-    firstName: '',
-    lastName: '',
-    phone: '',
-    email: '',
-})
-
-const feedback = reactive({
-    success: '',
-})
-
-const auth = nuxtApp.$firebase?.auth || null
-const listenAuthState = nuxtApp.$firebase?.onAuthStateChanged
-
-const currentUser = ref(auth?.currentUser || null)
-const isAuthChecking = ref(!currentUser.value)
-const logosLoading = ref(false)
-const unsubscribeAuth = ref(null)
-
-const normalizeDateValue = (value) => {
-    if (!value) return null
-    if (typeof value.toDate === 'function') {
-        try {
-            return value.toDate()
-        } catch (error) {
-            return null
-        }
-    }
-    if (value instanceof Date) return value
-    const parsed = new Date(value)
-    return Number.isNaN(parsed.getTime()) ? null : parsed
-}
-
-const formatDisplayDate = (value) => {
-    if (!value) return 'just now'
-    try {
-        return new Intl.DateTimeFormat('en-US', {
-            dateStyle: 'medium',
-            timeStyle: 'short',
-        }).format(value)
-    } catch (error) {
-        return value.toString()
-    }
-}
-
-const getLogoTitle = (logo) => (
-    logo?.state?.fullBusinessName ||
-    logo?.state?.companyName ||
-    logo?.state?.businessNameInitials ||
-    'Saved Logo'
-)
-
-const exportLogoState = (logo) => {
-    if (!logo?.state) return
-    const blob = new Blob([JSON.stringify(logo.state, null, 2)], { type: 'application/json' })
-    const url = URL.createObjectURL(blob)
-    const link = document.createElement('a')
-    link.href = url
-    const title = getLogoTitle(logo)
-        .replace(/[^a-z0-9-_]+/gi, '-')
-        .replace(/-{2,}/g, '-')
-        .replace(/^-|-$/g, '')
-    link.download = `${title || 'logo-settings'}.json`
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
-    URL.revokeObjectURL(url)
-}
-
-const profileError = computed(() => profileStore.error)
-const isLoadingProfile = computed(() => profileStore.isLoading)
-const isSaving = computed(() => profileStore.isSaving)
-const lastSavedCopy = computed(() => {
-    if (!profileStore.lastSavedAt) return ''
-    return formatDisplayDate(profileStore.lastSavedAt)
-})
-
-const hasChanges = computed(() => {
-    const source = profileStore.profile || {}
-    return ['firstName', 'lastName', 'phone', 'email'].some((field) => (form[field] || '') !== (source[field] || ''))
-})
-
-const savedLogos = computed(() => logoStore.savedLogos || [])
-
-const formattedLogos = computed(() =>
-    savedLogos.value.map((logo) => ({
-        ...logo,
-        createdAtDate: normalizeDateValue(logo.createdAt),
-    }))
-)
-
-watch(
-    () => profileStore.profile,
-    (profile) => {
-        form.firstName = profile?.firstName || ''
-        form.lastName = profile?.lastName || ''
-        form.phone = profile?.phone || ''
-        form.email = profile?.email || ''
-    },
-    { immediate: true }
-)
-
-const resumeLogo = (logo) => {
-    if (!logo) return
-    logoStore.restoreLogo(logo)
-    router.push('/create-my-logo')
-}
-
-const loadDashboardData = async (user) => {
-    if (!user) {
-        currentUser.value = null
-        isAuthChecking.value = false
-        feedback.success = ''
-        profileStore.resetProfile()
-        logoStore.$patch({ savedLogos: [] })
-        return
-    }
-
-    currentUser.value = user
-    isAuthChecking.value = false
-    feedback.success = ''
-
-    try {
-        await profileStore.loadProfile(user.uid)
-    } catch (error) {
-        // Errors are captured in the store
-    }
-
-    logosLoading.value = true
-    try {
-        await logoStore.fetchSavedLogos()
-    } catch (error) {
-        console.error('Unable to load saved logos', error)
-    } finally {
-        logosLoading.value = false
-    }
-}
-
-onMounted(async () => {
-    if (auth?.currentUser) {
-        await loadDashboardData(auth.currentUser)
-    } else {
-        isAuthChecking.value = true
-    }
-
-    if (listenAuthState && auth) {
-        unsubscribeAuth.value = listenAuthState(auth, (user) => {
-            loadDashboardData(user)
-        })
-    } else {
-        isAuthChecking.value = false
-    }
-})
-
-onUnmounted(() => {
-    if (typeof unsubscribeAuth.value === 'function') {
-        unsubscribeAuth.value()
-    }
-})
-
-const handleSave = async () => {
-    feedback.success = ''
-
-    try {
-        await profileStore.saveProfile({ ...form })
-        if (!profileError.value) {
-            feedback.success = 'Profile updated successfully.'
-        }
-    } catch (error) {
-        // Error message is surfaced via profileError
-    }
-}
-</script>
 
 <style scoped>
 .dashboard-page {

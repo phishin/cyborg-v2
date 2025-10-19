@@ -1,5 +1,6 @@
 // /stores/userProfile.js
 import { defineStore } from 'pinia'
+import { ref, computed } from 'vue'
 import { useNuxtApp } from '#app'
 import {
     doc,
