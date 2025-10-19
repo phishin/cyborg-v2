@@ -1,6 +1,7 @@
 <template>
     <section class="dashboard-page w-full min-h-screen bg-neutral-50 font-primary py-[80px]">
-        <div class="max-w-5xl mx-auto px-6 lg:px-8">
+
+        <div class="max-w-[1200px] mx-auto px-6 lg:px-8">
             <header class="mb-10">
                 <h1 class="text-[34px] md:text-[42px] font-black text-black leading-[1.1] mb-4 uppercase">
                     Account Dashboard
@@ -98,7 +99,7 @@
                             </p>
                             <p
                                 v-if="feedback.success"
-                                class="bg-green-50 border border-green-200 text-green-700 text-[16px] font-medium px-4 py-3 rounded-[10px]"
+                                class="bg-green-50 border border-green-200 text-green-700 text-[16px] font-medium px-4 py-3 rounded-[5px]"
                             >
                                 {{ feedback.success }}
                             </p>
@@ -110,7 +111,7 @@
                             </p>
                             <button
                                 type="submit"
-                                class="cta-btn bg-brand-300 text-white uppercase font-black tracking-[2px] text-[16px] leading-[1] py-4 px-6 rounded-[10px] transition transition-fast hover:bg-brand-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                                class="cta-btn bg-brand-300 text-white uppercase font-black tracking-[2px] text-[16px] leading-[1] py-4 px-6 transition transition-fast hover:bg-brand-200 disabled:opacity-50 disabled:cursor-not-allowed"
                                 :disabled="isSaving || isLoadingProfile || isAuthChecking || !hasChanges"
                             >
                                 <span v-if="isSaving">Saving...</span>
@@ -120,7 +121,7 @@
                     </form>
                 </section>
 
-                <section class="bg-white border border-neutral-200 rounded-[20px] shadow-sm overflow-hidden">
+                <section class="bg-white border border-neutral-200 rounded-[5px] shadow-sm overflow-hidden">
                     <div class="px-6 md:px-10 py-6 border-b border-neutral-200 bg-neutral-100">
                         <h2 class="text-[26px] md:text-[30px] font-black text-black uppercase">Saved Logos</h2>
                         <p class="text-neutral-600 text-[16px] md:text-[18px] leading-[1.5]">
@@ -128,12 +129,6 @@
                         </p>
                     </div>
                     <div class="px-6 md:px-10 py-8 space-y-6">
-                        <div v-if="logoMessages.error" class="bg-red-50 border border-red-200 text-red-600 text-[16px] font-medium px-4 py-3 rounded-[10px]">
-                            {{ logoMessages.error }}
-                        </div>
-                        <div v-if="logoMessages.success" class="bg-green-50 border border-green-200 text-green-700 text-[16px] font-medium px-4 py-3 rounded-[5px]">
-                            {{ logoMessages.success }}
-                        </div>
                         <div v-if="logosLoading" class="text-neutral-600 text-[18px] font-medium">Loading saved logos...</div>
                         <div v-else-if="!formattedLogos.length" class="text-neutral-600 text-[18px] font-medium">
                             You haven't saved any logos yet. Generate designs and save your favorites to see them here.
@@ -142,7 +137,7 @@
                             <article
                                 v-for="logo in formattedLogos"
                                 :key="logo.id"
-                                class="border border-neutral-200 rounded-[16px] p-6 bg-neutral-50"
+                                class="border border-neutral-200 rounded-[5px] p-6 bg-neutral-50"
                             >
                                 <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                                     <div class="space-y-2">
@@ -165,31 +160,27 @@
                                             <span
                                                 v-for="(color, index) in logo.state.selectedColorStyles"
                                                 :key="`${logo.id}-color-${index}`"
-                                                class="px-3 py-1 rounded-full bg-white border border-neutral-200 text-[13px] text-neutral-600"
+                                                class="px-3 py-1 rounded-[5px] bg-white border border-brand-field-border-gray text-[13px] text-neutral-600"
                                             >
                                                 {{ color?.name || color }}
                                             </span>
                                         </div>
                                     </div>
-                                    <div class="flex flex-col items-stretch gap-3 min-w-[200px]">
+                                    <div class="flex flex-col items-stretch gap-3 min-w-[180px]">
                                         <button
                                             type="button"
-                                            class="cta-btn bg-brand-300 text-white uppercase font-black tracking-[2px] text-[14px] leading-[1] py-3 px-4 rounded-[10px] transition transition-fast hover:bg-brand-200 disabled:opacity-60 disabled:cursor-not-allowed"
+                                            class="cta-btn bg-brand-300 text-white uppercase font-black tracking-[2px] text-[14px] leading-[1] py-3 px-4 rounded-[10px] transition transition-fast hover:bg-brand-200"
                                             @click="resumeLogo(logo)"
-                                            :disabled="isDeletingLogo(logo.id)"
                                         >
-                                            <span v-if="isDeletingLogo(logo.id)">Please wait...</span>
-                                            <span v-else>Resume Editing</span>
+                                            Resume Editing
                                         </button>
-                                        <button
-                                            type="button"
-                                            class="text-red-600 font-bold text-[14px] underline disabled:opacity-50 disabled:cursor-not-allowed"
-                                            @click="deleteLogo(logo)"
-                                            :disabled="isDeletingLogo(logo.id)"
-                                        >
-                                            <span v-if="isDeletingLogo(logo.id)">Removing...</span>
-                                            <span v-else>Remove</span>
-                                        </button>
+<!--                                        <button-->
+<!--                                            type="button"-->
+<!--                                            class="text-brand-300 font-bold text-[14px] underline"-->
+<!--                                            @click="exportLogoState(logo)"-->
+<!--                                        >-->
+<!--                                            Download Settings-->
+<!--                                        </button>-->
                                     </div>
                                 </div>
                             </article>
@@ -202,7 +193,7 @@
 </template>
 
 <script setup>
-import { computed, reactive, ref, watch, onMounted, onUnmounted, inject } from 'vue'
+import { computed, reactive, ref, watch, onMounted, onUnmounted } from 'vue'
 import { useRouter, useNuxtApp, useHead } from '#imports'
 import { useLogoStore } from '~/stores/logoStores'
 import { useUserProfileStore } from '~/stores/userProfile'
@@ -215,7 +206,6 @@ const router = useRouter()
 const nuxtApp = useNuxtApp()
 const logoStore = useLogoStore()
 const profileStore = useUserProfileStore()
-const logInUser = inject('logInUser', null)
 
 const form = reactive({
     firstName: '',
@@ -235,12 +225,6 @@ const currentUser = ref(auth?.currentUser || null)
 const isAuthChecking = ref(!currentUser.value)
 const logosLoading = ref(false)
 const unsubscribeAuth = ref(null)
-const deletingLogoIds = ref({})
-
-const logoMessages = reactive({
-    error: '',
-    success: '',
-})
 
 const normalizeDateValue = (value) => {
     if (!value) return null
@@ -275,6 +259,23 @@ const getLogoTitle = (logo) => (
     'Saved Logo'
 )
 
+const exportLogoState = (logo) => {
+    if (!logo?.state) return
+    const blob = new Blob([JSON.stringify(logo.state, null, 2)], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    const title = getLogoTitle(logo)
+        .replace(/[^a-z0-9-_]+/gi, '-')
+        .replace(/-{2,}/g, '-')
+        .replace(/^-|-$/g, '')
+    link.download = `${title || 'logo-settings'}.json`
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    URL.revokeObjectURL(url)
+}
+
 const profileError = computed(() => profileStore.error)
 const isLoadingProfile = computed(() => profileStore.isLoading)
 const isSaving = computed(() => profileStore.isSaving)
@@ -297,24 +298,6 @@ const formattedLogos = computed(() =>
     }))
 )
 
-const isDeletingLogo = (id) => Boolean(deletingLogoIds.value[id])
-
-const syncHeaderWithProfile = (profile) => {
-    if (!logInUser || !currentUser.value) return
-
-    const displayName = [profile?.firstName, profile?.lastName]
-        .filter(Boolean)
-        .join(' ')
-        .trim()
-
-    logInUser({
-        name: displayName || profile?.email || currentUser.value.displayName || currentUser.value.email || 'Cyborg User',
-        email: profile?.email || currentUser.value.email || '',
-        photo: currentUser.value.photoURL || '',
-        uid: currentUser.value.uid,
-    })
-}
-
 watch(
     () => profileStore.profile,
     (profile) => {
@@ -322,10 +305,6 @@ watch(
         form.lastName = profile?.lastName || ''
         form.phone = profile?.phone || ''
         form.email = profile?.email || ''
-
-        if (profile && (profile.firstName || profile.lastName || profile.email)) {
-            syncHeaderWithProfile(profile)
-        }
     },
     { immediate: true }
 )
@@ -336,40 +315,11 @@ const resumeLogo = (logo) => {
     router.push('/create-my-logo')
 }
 
-const updateDeletingState = (id, value) => {
-    if (!id) return
-    if (value) {
-        deletingLogoIds.value = { ...deletingLogoIds.value, [id]: true }
-    } else {
-        const { [id]: removed, ...rest } = deletingLogoIds.value
-        deletingLogoIds.value = rest
-    }
-}
-
-const deleteLogo = async (logo) => {
-    if (!logo?.id) return
-    logoMessages.error = ''
-    logoMessages.success = ''
-    updateDeletingState(logo.id, true)
-
-    try {
-        await logoStore.deleteSavedLogo(logo.id)
-        logoMessages.success = 'Saved logo removed.'
-    } catch (error) {
-        console.error('Unable to delete saved logo', error)
-        logoMessages.error = error?.message || 'Unable to delete this saved logo right now.'
-    } finally {
-        updateDeletingState(logo.id, false)
-    }
-}
-
 const loadDashboardData = async (user) => {
     if (!user) {
         currentUser.value = null
         isAuthChecking.value = false
         feedback.success = ''
-        logoMessages.error = ''
-        logoMessages.success = ''
         profileStore.resetProfile()
         logoStore.$patch({ savedLogos: [] })
         return
@@ -378,12 +328,9 @@ const loadDashboardData = async (user) => {
     currentUser.value = user
     isAuthChecking.value = false
     feedback.success = ''
-    logoMessages.error = ''
-    logoMessages.success = ''
 
     try {
         await profileStore.loadProfile(user.uid)
-        syncHeaderWithProfile(profileStore.profile)
     } catch (error) {
         // Errors are captured in the store
     }
@@ -422,22 +369,10 @@ onUnmounted(() => {
 
 const handleSave = async () => {
     feedback.success = ''
-    logoMessages.success = ''
-    logoMessages.error = ''
 
     try {
         await profileStore.saveProfile({ ...form })
         if (!profileError.value) {
-            if (auth?.currentUser?.reload) {
-                try {
-                    await auth.currentUser.reload()
-                    currentUser.value = auth.currentUser
-                } catch (reloadError) {
-                    console.warn('Unable to reload user after profile update', reloadError)
-                }
-            }
-
-            syncHeaderWithProfile(profileStore.profile)
             feedback.success = 'Profile updated successfully.'
         }
     } catch (error) {
