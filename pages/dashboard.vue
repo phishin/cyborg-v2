@@ -1,12 +1,12 @@
 <template>
     <section class="dashboard-page w-full min-h-screen bg-neutral-50 font-primary py-[80px]">
-        <div class="max-w-5xl mx-auto px-6 lg:px-8">
+        <div class="max-w-[1200px] mx-auto px-6 lg:px-8">
             <header class="mb-10">
                 <h1 class="text-[34px] md:text-[42px] font-black text-black leading-[1.1] mb-4 uppercase">
                     Account Dashboard
                 </h1>
                 <p class="text-neutral-600 text-[18px] md:text-[20px] leading-[1.5] max-w-3xl">
-                    Review and update your contact details, then jump back into any logo concepts you saved while building.
+                    Review and update your Cyborg Logo account details or see saved logos.
                 </p>
             </header>
 
@@ -98,7 +98,7 @@
                             </p>
                             <p
                                 v-if="feedback.success"
-                                class="bg-green-50 border border-green-200 text-green-700 text-[16px] font-medium px-4 py-3 rounded-[10px]"
+                                class="bg-green-50 border border-green-200 text-green-700 text-[16px] font-medium px-4 py-3 rounded-[5px]"
                             >
                                 {{ feedback.success }}
                             </p>
@@ -110,7 +110,7 @@
                             </p>
                             <button
                                 type="submit"
-                                class="cta-btn bg-brand-300 text-white uppercase font-black tracking-[2px] text-[16px] leading-[1] py-4 px-6 rounded-[10px] transition transition-fast hover:bg-brand-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                                class="cta-btn bg-brand-300 text-white uppercase font-black tracking-[2px] text-[16px] leading-[1] py-4 px-6 transition transition-fast hover:bg-brand-200 disabled:opacity-50 disabled:cursor-not-allowed"
                                 :disabled="isSaving || isLoadingProfile || isAuthChecking || !hasChanges"
                             >
                                 <span v-if="isSaving">Saving...</span>
@@ -120,7 +120,7 @@
                     </form>
                 </section>
 
-                <section class="bg-white border border-neutral-200 rounded-[20px] shadow-sm overflow-hidden">
+                <section class="bg-white border border-neutral-200 rounded-[5px] shadow-sm overflow-hidden">
                     <div class="px-6 md:px-10 py-6 border-b border-neutral-200 bg-neutral-100">
                         <h2 class="text-[26px] md:text-[30px] font-black text-black uppercase">Saved Logos</h2>
                         <p class="text-neutral-600 text-[16px] md:text-[18px] leading-[1.5]">
@@ -136,7 +136,7 @@
                             <article
                                 v-for="logo in formattedLogos"
                                 :key="logo.id"
-                                class="border border-neutral-200 rounded-[16px] p-6 bg-neutral-50"
+                                class="border border-neutral-200 rounded-[5px] p-6 bg-neutral-50"
                             >
                                 <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                                     <div class="space-y-2">
@@ -159,7 +159,7 @@
                                             <span
                                                 v-for="(color, index) in logo.state.selectedColorStyles"
                                                 :key="`${logo.id}-color-${index}`"
-                                                class="px-3 py-1 rounded-full bg-white border border-neutral-200 text-[13px] text-neutral-600"
+                                                class="px-3 py-1 rounded-[5px] bg-white border border-brand-field-border-gray text-[13px] text-neutral-600"
                                             >
                                                 {{ color?.name || color }}
                                             </span>
@@ -173,13 +173,13 @@
                                         >
                                             Resume Editing
                                         </button>
-                                        <button
-                                            type="button"
-                                            class="text-brand-300 font-bold text-[14px] underline"
-                                            @click="exportLogoState(logo)"
-                                        >
-                                            Download Settings
-                                        </button>
+<!--                                        <button-->
+<!--                                            type="button"-->
+<!--                                            class="text-brand-300 font-bold text-[14px] underline"-->
+<!--                                            @click="exportLogoState(logo)"-->
+<!--                                        >-->
+<!--                                            Download Settings-->
+<!--                                        </button>-->
                                     </div>
                                 </div>
                             </article>
