@@ -1,1 +1,229 @@
-// /stores/logoStores.jsimport { defineStore } from 'pinia'import { doc, setDoc, getDocs, collection, query, where } from 'firebase/firestore'import { useNuxtApp } from '#app'import isEqual from 'lodash/isEqual'/** * Pinia store for logo creation, saving, and retrieval. */export const useLogoStore = defineStore('logoStorageData', {    state: () => ({        // Creation flow        creationStep: 1,        logoBuilder: false,        // Business details        companyName: '',        createMyLogoIsActive: false,        fullBusinessName: '',        businessNameInitials: '',        businessCategory: '',        sloganOrTagline: '',        sloganOrTaglinePresent: false,        // Style selections        selectedIndustry: null,        selectedLogoStyle: null,        selectedSuffix: null,        preferredSymbolsOrStyles: [],        selectedColorStyles: [],        // Editor state        logoGenerationLoading: false,        originalLogoFieldValues: [],        selectedLogoID: '',        logoEditorSelected: false,        logoEditorLogoID: '',        // Modal and history        showSaveLogoModal: false,        undoHistory: [],        redoHistory: [],        // Saved logos        savedLogos: [],        userIsLoggedIn: false,        existingLogoSave: false,    }),    getters: {        savedLogoCount: (state) => state.savedLogos.length,    },    actions: {        // ─── Creation flow steps ──────────────────────────────────────────        activateCreateMyLogo() {            this.createMyLogoIsActive = true        },        triggerLogoGeneration() {            this.logoGenerationLoading = true            this.creationStep = 0            setTimeout(() => {                this.logoGenerationLoading = false                this.logoBuilder = true            }, 1000)        },        nextStep() {            if (this.creationStep < 7) this.creationStep++        },        previousStep() {            if (this.creationStep > 1) this.creationStep--        },        // ─── Undo/Redo functionality ─────────────────────────────────────        pushUndoHistory(stateSnapshot, maxHistory = 15) {            this.undoHistory.push(JSON.parse(JSON.stringify(stateSnapshot)))            if (this.undoHistory.length > maxHistory) this.undoHistory.shift()            this.redoHistory = []        },        pushRedoHistory(stateSnapshot, maxHistory = 15) {            this.redoHistory.push(JSON.parse(JSON.stringify(stateSnapshot)))            if (this.redoHistory.length > maxHistory) this.redoHistory.shift()        },        popUndoHistory() {            return this.undoHistory.pop()        },        popRedoHistory() {            return this.redoHistory.pop()        },        restoreState(state) {            this.selectedIndustry = state.selectedIndustry ? { ...state.selectedIndustry } : null            this.selectedLogoStyle = state.selectedLogoStyle            this.selectedSuffix = state.selectedSuffix            this.sloganOrTagline = state.sloganOrTagline            this.preferredSymbolsOrStyles = [...state.preferredSymbolsOrStyles]            this.selectedColorStyles = [...state.selectedColorStyles]            this.fullBusinessName = state.fullBusinessName            this.businessNameInitials = state.businessNameInitials            this.businessCategory = state.businessCategory        },        // ─── Logo editor toggles ─────────────────────────────────────────        openLogoEditor(logoID) {            this.selectedLogoID = logoID            this.logoEditorSelected = true        },        closeLogoEditor() {            this.logoEditorSelected = false            this.selectedLogoID = ''        },        // ─── Fetch saved logos ─────────────────────────────────────────────        async fetchSavedLogos() {            const nuxtApp = useNuxtApp()            const auth = nuxtApp.$firebase.auth            const db = nuxtApp.$firebase.firebaseDatabase            const user = auth.currentUser            if (!user) {                this.savedLogos = []                return            }            const q = query(collection(db, 'logos'), where('userId', '==', user.uid))            const snap = await getDocs(q)            this.savedLogos = snap.docs.map(d => ({ id: d.id, ...d.data() }))        },        /**         * Save logo state to Firestore, avoiding duplicates.         * @returns {string|null} New or existing doc ID, or null if not logged in         */        async saveLogo() {            const nuxtApp = useNuxtApp()            const auth = nuxtApp.$firebase.auth            const db = nuxtApp.$firebase.firebaseDatabase            const user = auth.currentUser            // If user not logged in, show modal            if (!user) {                this.showSaveLogoModal = true                return null            }            // Build a JSON-friendly snapshot            const stateToSave = {                creationStep: this.creationStep,                logoBuilder: this.logoBuilder,                companyName: this.companyName,                createMyLogoIsActive: this.createMyLogoIsActive,                fullBusinessName: this.fullBusinessName,                businessNameInitials: this.businessNameInitials,                businessCategory: this.businessCategory,                sloganOrTagline: this.sloganOrTagline,                sloganOrTaglinePresent: this.sloganOrTaglinePresent,                selectedIndustry: this.selectedIndustry ? JSON.parse(JSON.stringify(this.selectedIndustry)) : null,                selectedLogoStyle: this.selectedLogoStyle,                selectedSuffix: this.selectedSuffix,                preferredSymbolsOrStyles: [...this.preferredSymbolsOrStyles],                selectedColorStyles: [...this.selectedColorStyles],                logoGenerationLoading: this.logoGenerationLoading,                selectedLogoID: this.selectedLogoID,                logoEditorSelected: this.logoEditorSelected,                logoEditorLogoID: this.logoEditorLogoID,            }            // Load existing saves and check for duplicates using deep equality            await this.fetchSavedLogos()            const existing = this.savedLogos.find(item =>                isEqual(item.state, stateToSave)            )            if (existing) {                console.log('existing logo found');                this.existingLogoSave = true;                return existing.id            }            else if(!existing) {                this.existingLogoSave = false;            }            // Not a duplicate—persist new document            const payload = {                userId: user.uid,                createdAt: new Date(),                state: stateToSave,            }            const id = `${user.uid}_${Date.now()}`            await setDoc(doc(db, 'logos', id), payload)            this.existingLogoSave = false;            return id        },        closeSaveLogoModal() {            this.showSaveLogoModal = false        },        // Restore a saved logo's state        restoreLogo(saved) {            this.$patch(saved.state)        },    },})
+// /stores/logoStores.js
+import { defineStore } from 'pinia'
+import { doc, setDoc, getDocs, collection, query, where, deleteDoc, getDoc } from 'firebase/firestore'
+import { useNuxtApp } from '#app'
+import isEqual from 'lodash/isEqual'
+
+/**
+ * Pinia store for logo creation, saving, and retrieval.
+ */
+export const useLogoStore = defineStore('logoStorageData', {
+    state: () => ({
+        // Creation flow
+        creationStep: 1,
+        logoBuilder: false,
+        // Business details
+        companyName: '',
+        createMyLogoIsActive: false,
+        fullBusinessName: '',
+        businessNameInitials: '',
+        businessCategory: '',
+        sloganOrTagline: '',
+        sloganOrTaglinePresent: false,
+        // Style selections
+        selectedIndustry: null,
+        selectedLogoStyle: null,
+        selectedSuffix: null,
+        preferredSymbolsOrStyles: [],
+        selectedColorStyles: [],
+        // Editor state
+        logoGenerationLoading: false,
+        originalLogoFieldValues: [],
+        selectedLogoID: '',
+        logoEditorSelected: false,
+        logoEditorLogoID: '',
+        // Modal and history
+        showSaveLogoModal: false,
+        undoHistory: [],
+        redoHistory: [],
+        // Saved logos
+        savedLogos: [],
+        userIsLoggedIn: false,
+        existingLogoSave: false,
+    }),
+
+    getters: {
+        savedLogoCount: (state) => state.savedLogos.length,
+    },
+
+    actions: {
+        // ─── Creation flow steps ──────────────────────────────────────────
+        activateCreateMyLogo() {
+            this.createMyLogoIsActive = true
+        },
+        triggerLogoGeneration() {
+            this.logoGenerationLoading = true
+            this.creationStep = 0
+            setTimeout(() => {
+                this.logoGenerationLoading = false
+                this.logoBuilder = true
+            }, 1000)
+        },
+        nextStep() {
+            if (this.creationStep < 7) this.creationStep++
+        },
+        previousStep() {
+            if (this.creationStep > 1) this.creationStep--
+        },
+
+        // ─── Undo/Redo functionality ─────────────────────────────────────
+        pushUndoHistory(stateSnapshot, maxHistory = 15) {
+            this.undoHistory.push(JSON.parse(JSON.stringify(stateSnapshot)))
+            if (this.undoHistory.length > maxHistory) this.undoHistory.shift()
+            this.redoHistory = []
+        },
+        pushRedoHistory(stateSnapshot, maxHistory = 15) {
+            this.redoHistory.push(JSON.parse(JSON.stringify(stateSnapshot)))
+            if (this.redoHistory.length > maxHistory) this.redoHistory.shift()
+        },
+        popUndoHistory() {
+            return this.undoHistory.pop()
+        },
+        popRedoHistory() {
+            return this.redoHistory.pop()
+        },
+        restoreState(state) {
+            this.selectedIndustry = state.selectedIndustry ? { ...state.selectedIndustry } : null
+            this.selectedLogoStyle = state.selectedLogoStyle
+            this.selectedSuffix = state.selectedSuffix
+            this.sloganOrTagline = state.sloganOrTagline
+            this.preferredSymbolsOrStyles = [...state.preferredSymbolsOrStyles]
+            this.selectedColorStyles = [...state.selectedColorStyles]
+            this.fullBusinessName = state.fullBusinessName
+            this.businessNameInitials = state.businessNameInitials
+            this.businessCategory = state.businessCategory
+        },
+
+        // ─── Logo editor toggles ─────────────────────────────────────────
+        openLogoEditor(logoID) {
+            this.selectedLogoID = logoID
+            this.logoEditorSelected = true
+        },
+
+        closeLogoEditor() {
+            this.logoEditorSelected = false
+            this.selectedLogoID = ''
+        },
+
+        // ─── Fetch saved logos ─────────────────────────────────────────────
+        async fetchSavedLogos() {
+            const nuxtApp = useNuxtApp()
+            const auth = nuxtApp.$firebase.auth
+            const db = nuxtApp.$firebase.firebaseDatabase
+            const user = auth.currentUser
+            if (!user) {
+                this.savedLogos = []
+                return
+            }
+            const q = query(collection(db, 'logos'), where('userId', '==', user.uid))
+            const snap = await getDocs(q)
+            this.savedLogos = snap.docs.map(d => ({ id: d.id, ...d.data() }))
+        },
+
+        /**
+         * Save logo state to Firestore, avoiding duplicates.
+         * @returns {string|null} New or existing doc ID, or null if not logged in
+         */
+        async saveLogo() {
+            const nuxtApp = useNuxtApp()
+            const auth = nuxtApp.$firebase.auth
+            const db = nuxtApp.$firebase.firebaseDatabase
+            const user = auth.currentUser
+
+            // If user not logged in, show modal
+            if (!user) {
+                this.showSaveLogoModal = true
+                return null
+            }
+
+            // Build a JSON-friendly snapshot
+            const stateToSave = {
+                creationStep: this.creationStep,
+                logoBuilder: this.logoBuilder,
+                companyName: this.companyName,
+                createMyLogoIsActive: this.createMyLogoIsActive,
+                fullBusinessName: this.fullBusinessName,
+                businessNameInitials: this.businessNameInitials,
+                businessCategory: this.businessCategory,
+                sloganOrTagline: this.sloganOrTagline,
+                sloganOrTaglinePresent: this.sloganOrTaglinePresent,
+                selectedIndustry: this.selectedIndustry ? JSON.parse(JSON.stringify(this.selectedIndustry)) : null,
+                selectedLogoStyle: this.selectedLogoStyle,
+                selectedSuffix: this.selectedSuffix,
+                preferredSymbolsOrStyles: [...this.preferredSymbolsOrStyles],
+                selectedColorStyles: [...this.selectedColorStyles],
+                logoGenerationLoading: this.logoGenerationLoading,
+                selectedLogoID: this.selectedLogoID,
+                logoEditorSelected: this.logoEditorSelected,
+                logoEditorLogoID: this.logoEditorLogoID,
+            }
+
+            // Load existing saves and check for duplicates using deep equality
+            await this.fetchSavedLogos()
+            const existing = this.savedLogos.find(item =>
+                isEqual(item.state, stateToSave)
+            )
+
+            if (existing) {
+                console.log('existing logo found');
+                this.existingLogoSave = true;
+                return existing.id
+            }
+
+            else if(!existing) {
+                this.existingLogoSave = false;
+            }
+
+            // Not a duplicate—persist new document
+            const payload = {
+                userId: user.uid,
+                createdAt: new Date(),
+                state: stateToSave,
+            }
+            const id = `${user.uid}_${Date.now()}`
+            await setDoc(doc(db, 'logos', id), payload)
+            this.existingLogoSave = false;
+            return id
+        },
+
+        closeSaveLogoModal() {
+            this.showSaveLogoModal = false
+        },
+
+        // Restore a saved logo's state
+        restoreLogo(saved) {
+            this.$patch(saved.state)
+        },
+
+        async deleteSavedLogo(logoId) {
+            const nuxtApp = useNuxtApp()
+            const auth = nuxtApp.$firebase.auth
+            const db = nuxtApp.$firebase.firebaseDatabase
+            const user = auth.currentUser
+
+            if (!logoId) {
+                throw new Error('Missing saved logo identifier.')
+            }
+
+            if (!user) {
+                throw new Error('You must be logged in to delete a saved logo.')
+            }
+
+            const logoRef = doc(db, 'logos', logoId)
+            const snapshot = await getDoc(logoRef)
+
+            if (!snapshot.exists()) {
+                throw new Error('Logo could not be found or was already deleted.')
+            }
+
+            const data = snapshot.data()
+            if (data?.userId && data.userId !== user.uid) {
+                throw new Error('You do not have permission to delete this logo.')
+            }
+
+            await deleteDoc(logoRef)
+            this.savedLogos = this.savedLogos.filter((logo) => logo.id !== logoId)
+        },
+    },
+})
+import { defineStore } from 'pinia'import { doc, setDoc, getDocs, collection, query, where } from 'firebase/firestore'import { useNuxtApp } from '#app'import isEqual from 'lodash/isEqual'/** * Pinia store for logo creation, saving, and retrieval. */export const useLogoStore = defineStore('logoStorageData', {    state: () => ({        // Creation flow        creationStep: 1,        logoBuilder: false,        // Business details        companyName: '',        createMyLogoIsActive: false,        fullBusinessName: '',        businessNameInitials: '',        businessCategory: '',        sloganOrTagline: '',        sloganOrTaglinePresent: false,        // Style selections        selectedIndustry: null,        selectedLogoStyle: null,        selectedSuffix: null,        preferredSymbolsOrStyles: [],        selectedColorStyles: [],        // Editor state        logoGenerationLoading: false,        originalLogoFieldValues: [],        selectedLogoID: '',        logoEditorSelected: false,        logoEditorLogoID: '',        // Modal and history        showSaveLogoModal: false,        undoHistory: [],        redoHistory: [],        // Saved logos        savedLogos: [],        userIsLoggedIn: false,        existingLogoSave: false,    }),    getters: {        savedLogoCount: (state) => state.savedLogos.length,    },    actions: {        // ─── Creation flow steps ──────────────────────────────────────────        activateCreateMyLogo() {            this.createMyLogoIsActive = true        },        triggerLogoGeneration() {            this.logoGenerationLoading = true            this.creationStep = 0            setTimeout(() => {                this.logoGenerationLoading = false                this.logoBuilder = true            }, 1000)        },        nextStep() {            if (this.creationStep < 7) this.creationStep++        },        previousStep() {            if (this.creationStep > 1) this.creationStep--        },        // ─── Undo/Redo functionality ─────────────────────────────────────        pushUndoHistory(stateSnapshot, maxHistory = 15) {            this.undoHistory.push(JSON.parse(JSON.stringify(stateSnapshot)))            if (this.undoHistory.length > maxHistory) this.undoHistory.shift()            this.redoHistory = []        },        pushRedoHistory(stateSnapshot, maxHistory = 15) {            this.redoHistory.push(JSON.parse(JSON.stringify(stateSnapshot)))            if (this.redoHistory.length > maxHistory) this.redoHistory.shift()        },        popUndoHistory() {            return this.undoHistory.pop()        },        popRedoHistory() {            return this.redoHistory.pop()        },        restoreState(state) {            this.selectedIndustry = state.selectedIndustry ? { ...state.selectedIndustry } : null            this.selectedLogoStyle = state.selectedLogoStyle            this.selectedSuffix = state.selectedSuffix            this.sloganOrTagline = state.sloganOrTagline            this.preferredSymbolsOrStyles = [...state.preferredSymbolsOrStyles]            this.selectedColorStyles = [...state.selectedColorStyles]            this.fullBusinessName = state.fullBusinessName            this.businessNameInitials = state.businessNameInitials            this.businessCategory = state.businessCategory        },        // ─── Logo editor toggles ─────────────────────────────────────────        openLogoEditor(logoID) {            this.selectedLogoID = logoID            this.logoEditorSelected = true        },        closeLogoEditor() {            this.logoEditorSelected = false            this.selectedLogoID = ''        },        // ─── Fetch saved logos ─────────────────────────────────────────────        async fetchSavedLogos() {            const nuxtApp = useNuxtApp()            const auth = nuxtApp.$firebase.auth            const db = nuxtApp.$firebase.firebaseDatabase            const user = auth.currentUser            if (!user) {                this.savedLogos = []                return            }            const q = query(collection(db, 'logos'), where('userId', '==', user.uid))            const snap = await getDocs(q)            this.savedLogos = snap.docs.map(d => ({ id: d.id, ...d.data() }))        },        /**         * Save logo state to Firestore, avoiding duplicates.         * @returns {string|null} New or existing doc ID, or null if not logged in         */        async saveLogo() {            const nuxtApp = useNuxtApp()            const auth = nuxtApp.$firebase.auth            const db = nuxtApp.$firebase.firebaseDatabase            const user = auth.currentUser            // If user not logged in, show modal            if (!user) {                this.showSaveLogoModal = true                return null            }            // Build a JSON-friendly snapshot            const stateToSave = {                creationStep: this.creationStep,                logoBuilder: this.logoBuilder,                companyName: this.companyName,                createMyLogoIsActive: this.createMyLogoIsActive,                fullBusinessName: this.fullBusinessName,                businessNameInitials: this.businessNameInitials,                businessCategory: this.businessCategory,                sloganOrTagline: this.sloganOrTagline,                sloganOrTaglinePresent: this.sloganOrTaglinePresent,                selectedIndustry: this.selectedIndustry ? JSON.parse(JSON.stringify(this.selectedIndustry)) : null,                selectedLogoStyle: this.selectedLogoStyle,                selectedSuffix: this.selectedSuffix,                preferredSymbolsOrStyles: [...this.preferredSymbolsOrStyles],                selectedColorStyles: [...this.selectedColorStyles],                logoGenerationLoading: this.logoGenerationLoading,                selectedLogoID: this.selectedLogoID,                logoEditorSelected: this.logoEditorSelected,                logoEditorLogoID: this.logoEditorLogoID,            }            // Load existing saves and check for duplicates using deep equality            await this.fetchSavedLogos()            const existing = this.savedLogos.find(item =>                isEqual(item.state, stateToSave)            )            if (existing) {                console.log('existing logo found');                this.existingLogoSave = true;                return existing.id            }            else if(!existing) {                this.existingLogoSave = false;            }            // Not a duplicate—persist new document            const payload = {                userId: user.uid,                createdAt: new Date(),                state: stateToSave,            }            const id = `${user.uid}_${Date.now()}`            await setDoc(doc(db, 'logos', id), payload)            this.existingLogoSave = false;            return id        },        closeSaveLogoModal() {            this.showSaveLogoModal = false        },        // Restore a saved logo's state        restoreLogo(saved) {            this.$patch(saved.state)        },    },})

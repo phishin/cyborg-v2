@@ -1,12 +1,13 @@
 <template>
     <section class="dashboard-page w-full min-h-screen bg-neutral-50 font-primary py-[80px]">
+
         <div class="max-w-[1200px] mx-auto px-6 lg:px-8">
             <header class="mb-10">
                 <h1 class="text-[34px] md:text-[42px] font-black text-black leading-[1.1] mb-4 uppercase">
                     Account Dashboard
                 </h1>
                 <p class="text-neutral-600 text-[18px] md:text-[20px] leading-[1.5] max-w-3xl">
-                    Review and update your Cyborg Logo account details or see saved logos.
+                    Review and update your contact details, then jump back into any logo concepts you saved while building.
                 </p>
             </header>
 
