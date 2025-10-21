@@ -16,6 +16,20 @@ const createEmptyProfile = () => ({
     email: '',
 })
 
+const splitDisplayName = (displayName = '') => {
+    if (!displayName) {
+        return { firstName: '', lastName: '' }
+    }
+
+    const parts = displayName.trim().split(/\s+/)
+    const [firstName = '', ...rest] = parts
+
+    return {
+        firstName,
+        lastName: rest.join(' '),
+    }
+}
+
 export const useUserProfileStore = defineStore('userProfile', {
     state: () => ({
         profile: createEmptyProfile(),
@@ -65,9 +79,15 @@ export const useUserProfileStore = defineStore('userProfile', {
                     const createdAt = data.createdAt?.toDate?.()
                     this.lastSavedAt = updatedAt || createdAt || null
                 } else {
-                    const fallbackEmail = auth?.currentUser?.email || ''
+                    const fallbackUser = auth?.currentUser
+                    const fallbackEmail = fallbackUser?.email || ''
+                    const { firstName, lastName } = splitDisplayName(
+                        fallbackUser?.displayName || ''
+                    )
                     this.profile = {
                         ...createEmptyProfile(),
+                        firstName,
+                        lastName,
                         email: fallbackEmail,
                     }
                     this.hasExistingProfile = false
