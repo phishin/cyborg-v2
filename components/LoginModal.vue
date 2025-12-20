@@ -1,5 +1,5 @@
 <script setup>
-import { inject, provide, watch, ref, watchEffect, defineEmits, computed } from "vue";
+import { inject, provide, watch, ref, watchEffect, computed } from "vue";
 import ImageElement from "./ImageElement.vue";
 import { TwitterAuthProvider } from 'firebase/auth'
 import { useLogoStore } from '~/stores/logoStores';
