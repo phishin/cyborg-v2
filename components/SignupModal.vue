@@ -170,7 +170,7 @@ async function signUpWithGoogle(e) {
   <transition name="bounce">
     <div
         v-if="signupModalVisible"
-        class="signup-modal fixed flex flex-col justify-center my-auto py-[10vh] items-center w-screen h-screen inset-0 z-[9999] bg-black/90 font-primary">
+        class="signup-modal fixed flex flex-col justify-center my-auto py-[10vh] items-center w-screen h-screen inset-0 z-[9999] bg-black/90 font-primary backdrop-blur-sm">
       <div class="modal-container-wrapper w-full h-full md:my-[10vh]">
         <div class="modal-container h-full max-h-[90vh] md:max-h-[80vh] overflow-scroll max-w-mobile md:max-w-[686px] md:w-[686px] mx-auto pb-[50px] pt-[16px] px-[27px] bg-white">
           <div class="modal-top w-full relative">

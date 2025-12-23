@@ -6,7 +6,6 @@ import { useLogoStore } from '~/stores/logoStores';
 import { useUserProfileStore } from '~/stores/userProfile';
 const logoStore = useLogoStore();
 const profileStore = useUserProfileStore();
-
 const { $firebase } = useNuxtApp();
 
 // Inject the modal visibility state and the toggle function from the parent
@@ -201,13 +200,16 @@ watch(loginModalVisible, (newVal) => {
 //   console.log("Error message changed:", newVal);
 // });
 
+// Local state for logo builder active if needed.
+const logoBuilderActive = computed(() => logoStore.logoBuilder);
+
 </script>
 
 <template>
 
   <transition name="bounce">
     <div v-if="loginModalVisible"
-        class="signup-modal fixed flex flex-col justify-center my-auto py-[10vh] items-center w-screen h-screen inset-0 z-[99999] bg-black/90 font-primary">
+        class="signup-modal fixed flex flex-col justify-center my-auto py-[10vh] items-center w-screen h-screen inset-0 z-[99999] bg-black/90 font-primary backdrop-blur-sm">
       <div class="modal-container-wrapper w-full h-full md:my-[10vh]">
         <div
             class="modal-container h-full max-h-[90vh] md:max-h-[80vh] overflow-scroll max-w-mobile md:max-w-[686px] md:w-[686px] mx-auto pb-[50px] pt-[16px] px-[27px] bg-white">
@@ -232,8 +234,15 @@ watch(loginModalVisible, (newVal) => {
                 </span>
               </h5>
 
-              <p class="block relative text-black text-[18px] leading-[1] pt-[0px] font-medium" v-if="!loginUpdateStatus">Access your saved
-                designs and continue shaping your perfect logo.</p>
+              <p class="block relative text-black text-[18px] leading-[1] pt-[0px] font-medium" v-if="logoBuilderActive">
+                Login Or Signup to access your saved designs and continue shaping your perfect logo.
+              </p>
+
+              <p class="block relative text-black text-[18px] leading-[1] pt-[0px] font-medium" v-if="!logoBuilderActive">
+               Access your saved designs and continue shaping your perfect logo.
+              </p>
+
+
             </div>
 
             <!-- Brand Logos -->
