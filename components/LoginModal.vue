@@ -209,7 +209,7 @@ const logoBuilderActive = computed(() => logoStore.logoBuilder);
 
   <transition name="bounce">
     <div v-if="loginModalVisible"
-        class="signup-modal fixed flex flex-col justify-center my-auto py-[10vh] items-center w-screen h-screen inset-0 z-[99999] bg-black/90 font-primary backdrop-blur-sm">
+         class="signup-modal fixed flex flex-col justify-center my-auto py-[10vh] items-center w-screen h-screen inset-0 z-[99999] bg-black/90 font-primary backdrop-blur-sm">
       <div class="modal-container-wrapper w-full h-full md:my-[10vh]">
         <div
             class="modal-container h-full max-h-[90vh] md:max-h-[80vh] overflow-scroll max-w-mobile md:max-w-[686px] md:w-[686px] mx-auto pb-[50px] pt-[16px] px-[27px] bg-white">
@@ -239,7 +239,7 @@ const logoBuilderActive = computed(() => logoStore.logoBuilder);
               </p>
 
               <p class="block relative text-black text-[18px] leading-[1] pt-[0px] font-medium" v-if="!logoBuilderActive">
-               Access your saved designs and continue shaping your perfect logo.
+                Access your saved designs and continue shaping your perfect logo.
               </p>
 
 
@@ -250,8 +250,8 @@ const logoBuilderActive = computed(() => logoStore.logoBuilder);
               <div class="logo-item w-[60px] h-full">
                 <button @click="signUpWithGoogle" role="button" aria-label="Sign In With Google">
                   <image-element addon-classes="object-contain block w-[60px] h-[60px]"
-                     image-source="/assets/img/social-icon-google.png" :lazy-load="true"
-                     alt-text="Google Login"></image-element>
+                                 image-source="/assets/img/social-icon-google.png" :lazy-load="true"
+                                 alt-text="Google Login"></image-element>
                 </button>
               </div>
 
@@ -265,7 +265,7 @@ const logoBuilderActive = computed(() => logoStore.logoBuilder);
 
               <div class="logo-item w-[60px] h-full">
                 <button @click="signUpWithTwitter" role="button" aria-label="Sign In With Facebook">
-                   <image-element addon-classes="object-contain block w-[60px] h-[60px]" image-source="/assets/img/social-icon-twitter.png" :lazy-load="true" alt-text="Twitter Login"></image-element>
+                  <image-element addon-classes="object-contain block w-[60px] h-[60px]" image-source="/assets/img/social-icon-twitter.png" :lazy-load="true" alt-text="Twitter Login"></image-element>
                 </button>
               </div>
             </div>
@@ -351,25 +351,25 @@ const logoBuilderActive = computed(() => logoStore.logoBuilder);
 </template>
 
 <style scoped lang="scss">
-  .login-brand-logos {
-    grid-template-columns: repeat(3, 60px);
-  }
-  .bounce-enter-active {
+.login-brand-logos {
+  grid-template-columns: repeat(3, 60px);
+}
+.bounce-enter-active {
   animation: bounce-in 0.5s;
 }
-  .bounce-leave-active {
+.bounce-leave-active {
   animation: bounce-in 0.5s reverse;
 }
 
-  @keyframes bounce-in {
-    0% {
+@keyframes bounce-in {
+  0% {
     transform: scale(0);
   }
-    50% {
-      transform: scale(1.1);
-    }
-    100% {
-      transform: scale(1);
+  50% {
+    transform: scale(1.1);
+  }
+  100% {
+    transform: scale(1);
   }
 }
 

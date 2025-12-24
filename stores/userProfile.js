@@ -1,12 +1,16 @@
 // /stores/userProfile.js
 import { defineStore } from 'pinia'
 import { useNuxtApp } from '#app'
+const { $firebase } = useNuxtApp();
+
+
 import {
     doc,
     getDoc,
     setDoc,
     serverTimestamp,
 } from 'firebase/firestore'
+import { getAuth, onAuthStateChanged, signOut } from 'firebase/auth'
 
 const createEmptyProfile = () => ({
     firstName: '',
@@ -37,6 +41,15 @@ export const useUserProfileStore = defineStore('userProfile', {
         error: null,
         lastSavedAt: null,
         hasExistingProfile: false,
+
+        //login modal stuff user behavior
+        isUserLoggedIn: false,
+        loggedInUserData: {},
+        userLoggedOutAfterLogin: false,
+        loginModalVisible: false,
+        signupModalVisible: false,
+        activeUserDropdown: false,
+
     }),
 
     actions: {
@@ -174,5 +187,14 @@ export const useUserProfileStore = defineStore('userProfile', {
                 this.isSaving = false
             }
         },
+
+        toggleLoginModal() {
+            this.loginModalVisible = !this.loginModalVisible
+        },
+        toggleSignupModal() {
+            this.signupModalVisible = !this.signupModalVisible
+        }
+
+
     },
 })
