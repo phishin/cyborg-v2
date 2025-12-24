@@ -5,15 +5,18 @@ import { TwitterAuthProvider } from 'firebase/auth'
 import { useLogoStore } from '~/stores/logoStores';
 import { useUserProfileStore } from '~/stores/userProfile';
 const logoStore = useLogoStore();
-const profileStore = useUserProfileStore();
+const userProfileStore = useUserProfileStore();
 const { $firebase } = useNuxtApp();
 
-// Inject the modal visibility state and the toggle function from the parent
-const loginModalVisible = inject("loginModalVisible");
-const toggleLoginModal = inject("toggleLoginModal");
+// login and signup modal stuff
+// read states
+const loginModalVisible = computed(() => userProfileStore.loginModalVisible);
+
+// call actions
+const toggleLoginModal= () => userProfileStore.toggleLoginModal();
+
 
 const logInUser = inject("logInUser");
-const logOutUser = inject("logOutUser");
 const isUserLoggedIn = ref(false);
 const userLoggedOutAfterLogin = inject("userLoggedOutAfterLogin");
 const loginUpdateStatus = ref(false);

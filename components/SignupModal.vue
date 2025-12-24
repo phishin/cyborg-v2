@@ -6,13 +6,20 @@ const { $firebase } = useNuxtApp()
 import { useLogoStore } from '~/stores/logoStores';
 import { useUserProfileStore } from '~/stores/userProfile';
 const logoStore = useLogoStore();
-const profileStore = useUserProfileStore();
+const userProfileStore = useUserProfileStore();
 
 
 // these must have been provided upstream (e.g. via a parent plugin or provide/inject)
-const signupModalVisible = inject('signupModalVisible')
-const toggleSignupModal = inject('toggleSignupModal')
-const toggleLoginModal = inject('toggleLoginModal')
+
+
+// login and signup modal stuff
+// read states
+const signupModalVisible = computed(() => userProfileStore.signupModalVisible);
+
+// call actions
+const toggleSignupModal= () => userProfileStore.toggleSignupModal();
+
+
 const logInUser = inject('logInUser')
 
 // form state
